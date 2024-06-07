@@ -1,9 +1,11 @@
 ﻿using Source.EasyECS;
 using Source.Scripts.SignalSystem;
 using UnityEngine;
+using UnityEngine.Scripting;
 
 namespace Source.Scripts.EasyECS.Core
 {
+    [Preserve]
     public class DestroySystem : EcsSignalListener<CommandKillEntitySignal>
     {
         private EcsFilter _destroyingFilter;
@@ -27,7 +29,14 @@ namespace Source.Scripts.EasyECS.Core
                 
                 if (onDestroyData.TimeRemaining <= 0)
                 {
-                    if (onDestroyData.ObjectToDelete != null) onDestroyData.ObjectToDelete.gameObject.SetActive(false);// Object.Destroy(onDestroyData.ObjectToDelete.gameObject);
+                    if (onDestroyData.ObjectToDelete != null)
+                    {
+                        onDestroyData.ObjectToDelete.gameObject.SetActive(false);
+                        if (Componenter.TryGetReadOnly(entity, out EcsMonoBehaviorData ecsMonoBehaviorData))
+                        {
+                            RegistrySignal(new OnEcsMonoBehaviorDestroyedSignal {EcsMonoBehavior = ecsMonoBehaviorData.Value});
+                        }
+                    }
                     Componenter.DelEntity(entity);
                 }
             }

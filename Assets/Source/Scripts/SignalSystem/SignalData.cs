@@ -11,10 +11,19 @@ namespace Source.Scripts.SignalSystem
     {
         public EcsMonoBehavior EcsMonoBehavior;
     }
+    
     /// <summary>
     /// MonoBehaviourView уничтожился.
     /// </summary>
-    public struct OnEcsMonoBehaviorDestroySignal : ISignal
+    public struct OnEcsMonoBehaviorStartDestroySignal : ISignal
+    {
+        public EcsMonoBehavior EcsMonoBehavior;
+    }
+    
+    /// <summary>
+    /// MonoBehaviourView уничтожился.
+    /// </summary>
+    public struct OnEcsMonoBehaviorDestroyedSignal : ISignal
     {
         public EcsMonoBehavior EcsMonoBehavior;
     }

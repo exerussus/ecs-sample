@@ -1,4 +1,5 @@
 ﻿
+using System.Collections.Generic;
 using Sirenix.OdinInspector;
 using Source.EasyECS;
 using Source.EasyECS.Interfaces;
@@ -18,10 +19,10 @@ namespace Source.Scripts.EasyECS.Core
         [SerializeField, ReadOnly] private bool isAlive = true;
         [SerializeField, ReadOnly] private bool isInitialized;
         [SerializeField, ReadOnly] private int components;
-        [SerializeField, HideInInspector] private UnityEvent<int, Componenter> onInitialized;
-        [SerializeField, HideInInspector] private UnityEvent<int, Componenter> onDestroy;
+        [SerializeField, HideInInspector] private EcsComponent[] ecsComponents;
         [SerializeField, HideInInspector] private Signal signal;
         private bool _isReused;
+        
         #endregion
 
         #region Members
@@ -53,7 +54,7 @@ namespace Source.Scripts.EasyECS.Core
             entity = Componenter.GetNewEntity();
             ref var transformData = ref Componenter.Add<TransformData>(entity);
             transformData.InitializeValues(transform);
-            onInitialized?.Invoke(entity, Componenter);
+            foreach (var ecsComponent in ecsComponents) ecsComponent.Initialize(entity, Componenter);
             ref var ecsMonoBehData = ref Componenter.Add<EcsMonoBehaviorData>(entity);
             ecsMonoBehData.InitializeValues(this);
             signal.RegistryRaise(new OnEcsMonoBehaviorInitializedSignal { EcsMonoBehavior = this });
@@ -65,10 +66,10 @@ namespace Source.Scripts.EasyECS.Core
             isAlive = false;
             isInitialized = false;
             _isReused = true;
-            onDestroy?.Invoke(entity, Componenter);
-            signal.RegistryRaise(new OnEcsMonoBehaviorDestroySignal { EcsMonoBehavior = this });
+            foreach (var ecsComponent in ecsComponents) ecsComponent.Destroy(entity, Componenter);
+            signal.RegistryRaise(new OnEcsMonoBehaviorStartDestroySignal { EcsMonoBehavior = this });
             ref var destroyingData = ref Componenter.AddOrGet<OnDestroyData>(entity);
-            destroyingData.InitializeValues(gameObject, 5f);
+            destroyingData.InitializeValues(gameObject, Constants.Ecs.EntityDestroyDelay);
         }
 
         #endregion
@@ -80,25 +81,8 @@ namespace Source.Scripts.EasyECS.Core
         {
             if (signal == null) signal = Project.Loader.GetAssetByTypeOnValidate<Signal>();
 
-            var monoBehaviours = GetComponents<MonoBehaviour>();
-            onInitialized = new UnityEvent<int, Componenter>();
-            onDestroy = new UnityEvent<int, Componenter>();
-            components = 0;
-            foreach (var monoBeh in monoBehaviours)
-            {
-                var isComponent = false;
-                if (monoBeh is IEcsComponentInitialize ecsInitializer)
-                {
-                    onInitialized.AddListener(ecsInitializer.Initialize);
-                    isComponent = true;
-                }
-                if (monoBeh is IEcsComponentDestroy ecsDestroyer)
-                {
-                    onDestroy.AddListener(ecsDestroyer.Destroy);
-                    isComponent = true;
-                }
-                if (isComponent) components++;
-            }
+            ecsComponents = GetComponents<EcsComponent>();
+            components = ecsComponents.Length;
         }
 #endif
         

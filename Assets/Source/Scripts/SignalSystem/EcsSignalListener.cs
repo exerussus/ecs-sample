@@ -1,5 +1,6 @@
 ﻿using Source.EasyECS;
 using Source.SignalSystem;
+using UnityEngine.Scripting;
 
 namespace Source.Scripts.SignalSystem
 {
